@@ -16,6 +16,12 @@
 	<properties>
 		<java.version>1.8</java.version>
 	</properties>
+	<repositories>
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -46,9 +52,12 @@
 			<version>1.6.8</version>
 		</dependency>
 
+
+
+
 		<dependency>
-			<groupId>hu.landov.mnb</groupId>
-			<artifactId>mnb-webservice-client</artifactId>
+			<groupId>com.github.landov</groupId>
+			<artifactId>MNBWebservice</artifactId>
 			<version>1.1.4</version>
 		</dependency>
 
