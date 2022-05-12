@@ -1,9 +1,5 @@
 package hu.landov.mnb.rest.dto.error;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class ErrorDetail {
 
     private String title;
