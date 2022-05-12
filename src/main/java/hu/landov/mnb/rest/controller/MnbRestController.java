@@ -20,11 +20,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ServerErrorException;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -37,9 +35,10 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class MnbRestController {
 
-    private MNBWebserviceFacade facade;
-    //Stored currenciy IDs for error checking
-    private List<String> currencies;
+
+    private final MNBWebserviceFacade facade;
+    //Stored currency IDs for error checking
+    private final List<String> currencies;
 
     @Inject
     private StoredRateRepository storedRateRepository;
@@ -48,6 +47,13 @@ public class MnbRestController {
     private static final String DATE_EXAMPLE = "2019-09-16";
     private static final String TARGET_DESCRIPTION = "Target currency (optional) default HUF.";
     private static final String LASTKNOWN_DESCRIPTION = "Set to true: If there is no exchange rate for the given date, get the last known one.";
+
+    private static final String HUF = "HUF";
+    private static final String SUCCESSFULL_OPERATION = "Successful operation";
+    private static final String INVALID_REQUEST = "Invalid request";
+    private static final String RESOURCE_NOT_FOUND = "Resource not found";
+    private static final String SERVER_ERROR = "Server error";
+    private static final String APPLICATION_JSON = "application/json";
 
     {
         try {
@@ -62,12 +68,12 @@ public class MnbRestController {
         }
     }
 
-    @RequestMapping(value = "/mnb/symbols", method = RequestMethod.GET, produces = {"application/json"})
+    @RequestMapping(value = "/mnb/symbols", method = RequestMethod.GET, produces = {APPLICATION_JSON})
     @Operation(summary = "Retrieves all available currency symbols.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Sucessful operation",
-                    content = {@Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = String.class)))}),
-            @ApiResponse(responseCode = "500", description = "Server error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDetail.class))})
+            @ApiResponse(responseCode = "200", description = SUCCESSFULL_OPERATION,
+                    content = {@Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = String.class)))}),
+            @ApiResponse(responseCode = "500", description = SERVER_ERROR, content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ErrorDetail.class))})
     })
     public ResponseEntity<Iterable<String>> getSymbols() {
         try {
@@ -82,17 +88,17 @@ public class MnbRestController {
     @RequestMapping(value = "/mnb/currencies", method = RequestMethod.GET)
     @Operation(summary = "Retrieves all available currencies with exchange rate.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Sucessful operation",
-                    content = {@Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = ExchangeRate.class)))}),
-            @ApiResponse(responseCode = "400", description = "Invalid request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDetail.class))}),
-            @ApiResponse(responseCode = "404", description = "Resource not found", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDetail.class))}),
-            @ApiResponse(responseCode = "500", description = "Server error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDetail.class))})
+            @ApiResponse(responseCode = "200", description = SUCCESSFULL_OPERATION,
+                    content = {@Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ExchangeRate.class)))}),
+            @ApiResponse(responseCode = "400", description = INVALID_REQUEST, content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ErrorDetail.class))}),
+            @ApiResponse(responseCode = "404", description = RESOURCE_NOT_FOUND, content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ErrorDetail.class))}),
+            @ApiResponse(responseCode = "500", description = SERVER_ERROR, content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ErrorDetail.class))})
     })
     public ResponseEntity<Iterable<ExchangeRate>> getCurrencies(
-            @Parameter(description = DATE_DESCRIPTION, example = DATE_EXAMPLE) @RequestParam(required = false) String date,
-            HttpServletRequest request
+            @Parameter(description = DATE_DESCRIPTION, example = DATE_EXAMPLE) @RequestParam(required = false) final String date,
+            final HttpServletRequest request
     ) {
-        System.out.println(LocalDateTime.now().toString() + " " + request.getRemoteAddr());
+        System.out.println(LocalDateTime.now() + " " + request.getRemoteAddr());
         if (date != null) {
             checkDate(date);
         }
@@ -107,7 +113,7 @@ public class MnbRestController {
                         currencies.add(facade.getHistoricalExchangeRate(currencyId, date));
                     }
                 } catch (IndexOutOfBoundsException e) {
-                    //Do nothing theres no data for a given currency
+                    //Do nothing there's no data for a given currency
                 }
             }
             //Iterable<String> currencies = facade.getCurrencies();
@@ -120,57 +126,61 @@ public class MnbRestController {
     @RequestMapping(value = "/mnb/currencies/{currencyId}", method = RequestMethod.GET)
     @Operation(summary = "Exchange rate of a single currency")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Sucessful operation",
-                    content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ExchangeRate.class))}),
-            @ApiResponse(responseCode = "400", description = "Invalid request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDetail.class))}),
-            @ApiResponse(responseCode = "404", description = "Resource not found", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDetail.class))}),
-            @ApiResponse(responseCode = "500", description = "Server error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDetail.class))})
+            @ApiResponse(responseCode = "200", description = SUCCESSFULL_OPERATION,
+                    content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ExchangeRate.class))}),
+            @ApiResponse(responseCode = "400", description = INVALID_REQUEST, content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ErrorDetail.class))}),
+            @ApiResponse(responseCode = "404", description = RESOURCE_NOT_FOUND, content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ErrorDetail.class))}),
+            @ApiResponse(responseCode = "500", description = SERVER_ERROR, content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ErrorDetail.class))})
     })
     public ResponseEntity<ExchangeRate> getCurrency(
-            @PathVariable String currencyId,
+            @PathVariable final String currencyId,
             @Parameter(description = DATE_DESCRIPTION, example = DATE_EXAMPLE)
-            @RequestParam(required = false) String date,
+            @RequestParam(required = false) final String date,
             @Parameter(description = TARGET_DESCRIPTION)
-            @RequestParam(required = false) String target,
+            @RequestParam(required = false) final String target,
             @Parameter(description = LASTKNOWN_DESCRIPTION)
-            @RequestParam(required = false) boolean lastknown) {
+            @RequestParam(required = false) final boolean lastknown) {
         try {
             checkCurrency(currencyId);
             ExchangeRate rate = null;
             if (date == null) {
-                if ((target == null) || (target.equals("HUF"))) {
+                if ((target == null) || (target.equals(HUF))) {
                     rate = getRate(currencyId);
                     //rate = facade.getCurrentExchangeRate(currencyId);
                 } else {
-                    //TODO Webservicefacade has no option for this without date. And current date not allways available
+                    //TODO Webservicefacade has no option for this without date. And current date not always available
                     rate = getRate(currencyId, target);
                     //rate = facade.getExchangeRateBetween(currencyId, target, LocalDate.now());
                 }
             } else {
+                String myDate = date;
                 checkDate(date);
                 boolean success = false;
                 while (!success) {
-                    if ((target == null) || (target.equals("HUF"))) {
+                    if ((target == null) || (target.equals(HUF))) {
                         try {
-                            rate = getDatedRate(currencyId, date);
-                            //rate = facade.getHistoricalExchangeRate(currencyId, date);
+                            rate = getDatedRate(currencyId, myDate);
+                            //rate = facade.getHistoricalExchangeRate(currencyId, myDate);
                             success = true;
                         } catch (IllegalArgumentException e) {
                             if (lastknown) {
-                                date = goBackOneDay(date);
+                                myDate = goBackOneDay(myDate);
                             } else {
                                 throw new ResourceNotFoundException("No rate were found. Set lastknow=true for last available rate.");
                             }
                         }
+                        catch (Exception e){
+                            e.printStackTrace();
+                        }
                     } else {
                         checkCurrency(target);
                         try {
-                            rate = getRate(currencyId, date, target);
-                            //rate = facade.getExchangeRateBetween(currencyId, target, date);
+                            rate = getRate(currencyId, myDate, target);
+                            //rate = facade.getExchangeRateBetween(currencyId, target, myDate);
                             success = true;
                         } catch (IllegalArgumentException e) {
                             if (lastknown) {
-                                date = goBackOneDay(date);
+                                myDate = goBackOneDay(myDate);
                             } else {
                                 throw new ResourceNotFoundException("No rate were found. Set lastknow=true for last available rate.");
                             }
@@ -189,16 +199,16 @@ public class MnbRestController {
     @RequestMapping(value = "/mnb/currencies/{currencyId}/history", method = RequestMethod.GET)
     @Operation(summary = "Historical data of the given currency")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Sucessful operation",
-                    content = {@Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = ExchangeRate.class)))}),
-            @ApiResponse(responseCode = "400", description = "Invalid request", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDetail.class))}),
-            @ApiResponse(responseCode = "404", description = "Resource not found", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDetail.class))}),
-            @ApiResponse(responseCode = "500", description = "Server error", content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDetail.class))})
+            @ApiResponse(responseCode = "200", description = SUCCESSFULL_OPERATION,
+                    content = {@Content(mediaType = APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = ExchangeRate.class)))}),
+            @ApiResponse(responseCode = "400", description = INVALID_REQUEST, content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ErrorDetail.class))}),
+            @ApiResponse(responseCode = "404", description = RESOURCE_NOT_FOUND, content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ErrorDetail.class))}),
+            @ApiResponse(responseCode = "500", description = SERVER_ERROR, content = {@Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = ErrorDetail.class))})
     })
     public ResponseEntity<Iterable<ExchangeRate>> getHistory(
-            @PathVariable String currencyId,
-            @Parameter(description = "Starting date of the request.", example = DATE_EXAMPLE) @RequestParam String from,
-            @Parameter(description = "End date of the request. Optional, defaults to current date", example = DATE_EXAMPLE) @RequestParam(required = false) String to) {
+            @PathVariable final String currencyId,
+            @Parameter(description = "Starting date of the request.", example = DATE_EXAMPLE) @RequestParam final String from,
+            @Parameter(description = "End date of the request. Optional, defaults to current date", example = DATE_EXAMPLE) @RequestParam(required = false) final String to) {
         checkCurrency(currencyId);
         if (from == null) {
             throw new InvalidRequestException("Missing parameter: from");
@@ -221,7 +231,7 @@ public class MnbRestController {
         }
     }
 
-    private String goBackOneDay(String dateString) {
+    private String goBackOneDay(final String dateString) {
         LocalDate date = LocalDate.parse(dateString).minusDays(1);
         if (date.isBefore(LocalDate.parse("1975-01-01"))) {
             throw new MnbServerErrorException("Terrible error!");
@@ -229,7 +239,7 @@ public class MnbRestController {
         return date.toString();
     }
 
-    private void checkDate(String date) {
+    private void checkDate(final String date) {
         try {
             LocalDate.parse(date);
         } catch (DateTimeParseException e) {
@@ -237,14 +247,14 @@ public class MnbRestController {
         }
     }
 
-    private void checkCurrency(String currencyId) {
+    private void checkCurrency(final String currencyId) {
         if (!currencies.contains(currencyId)) {
             throw new ResourceNotFoundException("Currency: " + currencyId + " cant' be found");
         }
     }
 
 
-    private ExchangeRate getRateFromDatabase(String id) {
+    private ExchangeRate getRateFromDatabase(final String id) {
         Optional<StoredRate> storedRateOptional = storedRateRepository.findById(id);
         if (storedRateOptional.isPresent()) {
             StoredRate storedRate = storedRateOptional.get();
@@ -260,37 +270,39 @@ public class MnbRestController {
         }
     }
 
-    private ExchangeRate getRate(String currency) throws MNBWebserviceFacadeException {
+    private ExchangeRate getRate(final String currency) throws MNBWebserviceFacadeException {
         LocalDate lastDate = facade.getStoredInterval().getEndDate();
-        return getRate(currency, lastDate.toString(), "HUF");
+        return getRate(currency, lastDate.toString(), HUF);
     }
 
-    private ExchangeRate getRate(String currency, String target) throws MNBWebserviceFacadeException {
+    private ExchangeRate getRate(final String currency, final String target) throws MNBWebserviceFacadeException {
         LocalDate lastDate = facade.getStoredInterval().getEndDate();
         return getRate(currency, lastDate.toString(), target);
     }
 
-    private ExchangeRate getDatedRate(String currency, String date) throws MNBWebserviceFacadeException {
-        return getRate(currency, date, "HUF");
+    private ExchangeRate getDatedRate(final String currency, final String date) throws MNBWebserviceFacadeException {
+        return getRate(currency, date, HUF);
     }
 
-    private ExchangeRate getRate(String currency, String date, String target) throws MNBWebserviceFacadeException {
+    private ExchangeRate getRate(final String currency, final String date, final String target) throws MNBWebserviceFacadeException {
 
-        if (currency.equals("HUF")) {
+        if (currency.equals(HUF)) {
             throw new InvalidRequestException("HUF is not listed by MNB.");
         }
 
         //If rate stored in database retrieve it
         String id = String.format("%s:%s:%s", date, currency, target);
         ExchangeRate rate = getRateFromDatabase(id);
+
         if (rate != null) {
             return rate;
         }
 
         //Otherwise, make new request, store and return
 
-        if (target == "HUF") {
+        if (target.equals(HUF)) {
             rate = facade.getHistoricalExchangeRate(currency, date);
+
 
         } else {
             rate = facade.getExchangeRateBetween(currency, target, date);
@@ -304,7 +316,7 @@ public class MnbRestController {
                 System.out.println("New Rate: " + storeRate);
                 storedRateRepository.save(storeRate);
             } catch (DataIntegrityViolationException e) {
-                //TODO Somethimes we are too fast for the SQL server
+                //TODO Sometimes we are too fast for the SQL server but no problem if rate not saved
             }
 
         }

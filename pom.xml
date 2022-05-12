@@ -52,9 +52,6 @@
 			<version>1.6.8</version>
 		</dependency>
 
-
-
-
 		<dependency>
 			<groupId>com.github.landov</groupId>
 			<artifactId>MNBWebservice</artifactId>
