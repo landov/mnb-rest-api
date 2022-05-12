@@ -1,5 +1,6 @@
 package hu.landov.mnb.rest.controller;
 
+
 import hu.landov.mnb.ExchangeRate;
 import hu.landov.mnb.MNBWebserviceFacade;
 import hu.landov.mnb.MNBWebserviceFacadeException;
@@ -16,6 +17,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +39,7 @@ import java.util.Optional;
 public class MnbRestController {
 
 
+    private Logger logger = LoggerFactory.getLogger(MnbRestController.class);
     private final MNBWebserviceFacade facade;
     //Stored currency IDs for error checking
     private final List<String> currencies;
@@ -98,7 +102,7 @@ public class MnbRestController {
             @Parameter(description = DATE_DESCRIPTION, example = DATE_EXAMPLE) @RequestParam(required = false) final String date,
             final HttpServletRequest request
     ) {
-        System.out.println(LocalDateTime.now() + " " + request.getRemoteAddr());
+        logger.info(request.getRemoteAddr());
         if (date != null) {
             checkDate(date);
         }
@@ -313,7 +317,7 @@ public class MnbRestController {
                 storeRate.setId(id);
                 storeRate.setUnit(rate.getUnit());
                 storeRate.setRate(rate.getRate());
-                System.out.println("New Rate: " + storeRate);
+                logger.info("New Rate: " + storeRate);
                 storedRateRepository.save(storeRate);
             } catch (DataIntegrityViolationException e) {
                 //TODO Sometimes we are too fast for the SQL server but no problem if rate not saved

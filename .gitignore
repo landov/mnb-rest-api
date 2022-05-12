@@ -5,5 +5,5 @@ target/
 **/src/test/**/target/
 **/src/main/**/resources/
 
-
 /src/main/resources/application.properties
+/mnb-rest-api.log

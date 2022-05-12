@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>hu.landov.mnb</groupId>
 	<artifactId>mnbrest</artifactId>
-	<version>0.0.2</version>
+	<version>0.0.3</version>
 	<name>mnbrest</name>
 	<description>Rest API for MNB Webservice class</description>
 	<properties>
