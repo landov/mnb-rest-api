@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,12 +40,11 @@ import java.util.Optional;
 public class MnbRestController {
 
 
-    private Logger logger = LoggerFactory.getLogger(MnbRestController.class);
+    private final Logger logger = LoggerFactory.getLogger(MnbRestController.class);
     private final MNBWebserviceFacade facade;
     //Stored currency IDs for error checking
     private final List<String> currencies;
 
-    @Inject
     private StoredRateRepository storedRateRepository;
 
     private static final String DATE_DESCRIPTION = "Date (optional) for which exchange rate to be retrieved. Default the last available date.";
@@ -59,7 +59,18 @@ public class MnbRestController {
     private static final String SERVER_ERROR = "Server error";
     private static final String APPLICATION_JSON = "application/json";
 
-    {
+    @Autowired
+    public MnbRestController(final MNBWebserviceFacade facade, final StoredRateRepository storedRateRepository){
+        this.facade = facade;
+        this.storedRateRepository = storedRateRepository;
+        try {
+            this.currencies = facade.getCurrencies();
+        } catch (MNBWebserviceFacadeException e) {
+            throw new RuntimeException("Failed to retrieve currency list",e);
+        }
+    }
+
+   /* {
         try {
             facade = new MNBWebserviceFacade();
         } catch (MNBWebserviceFacadeException e) {
@@ -70,7 +81,7 @@ public class MnbRestController {
         } catch (MNBWebserviceFacadeException e) {
             throw new RuntimeException(e.getMessage());
         }
-    }
+    }*/
 
     @RequestMapping(value = "/mnb/symbols", method = RequestMethod.GET, produces = {APPLICATION_JSON})
     @Operation(summary = "Retrieves all available currency symbols.")
