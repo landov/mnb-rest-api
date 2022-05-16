@@ -1,4 +1,4 @@
-# mnbRest
+# mnb-rest-api
 
 Rest API uses MNBWebService https://github.com/landov/MNBWebservice
 
